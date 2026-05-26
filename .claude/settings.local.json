@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(ls \"c:/Users/gmper/Documents/personal/pokemon-battle-simulator/pokemon-battle-simulator-backend\" 2>&1; echo \"---\"; ls \"c:/Users/gmper/Documents/personal/pokemon-battle-simulator\" 2>&1)",
+      "Read(//c/Users/gmper/Documents/personal/pokemon-battle-simulator/**)",
+      "Bash(go version *)",
+      "Bash(go build *)"
+    ]
+  }
+}
