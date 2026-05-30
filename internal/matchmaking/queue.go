@@ -3,7 +3,10 @@
 // batalla en session.Store y se notifica a ambos.
 package matchmaking
 
-import "sync"
+import (
+	"encoding/json"
+	"sync"
+)
 
 // Queue es una cola FIFO por formato. Cada Enqueue puede devolver un match
 // inmediatamente si ya había alguien esperando ese formato.
@@ -14,10 +17,11 @@ type Queue struct {
 
 type Waiter struct {
 	PlayerID string
-	TeamRaw  any // pokemon.Team; tipo libre para evitar acoplamiento
-	// Notify se invoca cuando se encuentra match. El receptor es el creador
-	// del waiter (típicamente el handler de la conexión).
-	Notify func(opponent *Waiter, battleID string)
+	TeamRaw  json.RawMessage // pokemon.Team serializado, sin parsear todavía
+	// Conn es la conexión del jugador en espera (*ws.Conn, guardado como any
+	// para evitar el ciclo de imports ws→matchmaking). Quien arma el match la
+	// usa para notificar a este jugador.
+	Conn any
 }
 
 func New() *Queue {

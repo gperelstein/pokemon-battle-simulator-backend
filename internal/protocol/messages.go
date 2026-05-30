@@ -7,15 +7,17 @@
 // las estructuras.
 package protocol
 
+import "encoding/json"
+
 // ───── Cliente → Servidor ─────
 
 type ClientMessage struct {
 	Type string `json:"type"`
 
-	Auth         *AuthMsg         `json:"auth,omitempty"`
-	QueueJoin    *QueueJoinMsg    `json:"queueJoin,omitempty"`
-	QueueLeave   *struct{}        `json:"queueLeave,omitempty"`
-	BattleAction *BattleActionMsg `json:"battleAction,omitempty"`
+	Auth          *AuthMsg          `json:"auth,omitempty"`
+	QueueJoin     *QueueJoinMsg     `json:"queueJoin,omitempty"`
+	QueueLeave    *struct{}         `json:"queueLeave,omitempty"`
+	BattleAction  *BattleActionMsg  `json:"battleAction,omitempty"`
 	BattleForfeit *BattleForfeitMsg `json:"battleForfeit,omitempty"`
 }
 
@@ -25,13 +27,13 @@ type AuthMsg struct {
 }
 
 type QueueJoinMsg struct {
-	Format string `json:"format"` // "gen9ou", "gen3uu", etc.
-	Team   any    `json:"team"`   // pokemon.Team serializado; tipo libre acá para evitar acoplamiento
+	Format string          `json:"format"` // "gen9ou", "gen3uu", etc.
+	Team   json.RawMessage `json:"team"`   // pokemon.Team serializado; crudo para no acoplar el protocolo a pokemon
 }
 
 type BattleActionMsg struct {
-	BattleID string `json:"battleId"`
-	Action   any    `json:"action"` // battle.Action serializado
+	BattleID string          `json:"battleId"`
+	Action   json.RawMessage `json:"action"` // battle.Action serializado; el transporte lo deserializa
 }
 
 type BattleForfeitMsg struct {
@@ -77,8 +79,8 @@ type BattleEventsMsg struct {
 type BattleRequestMsg struct {
 	BattleID    string `json:"battleId"`
 	Kind        string `json:"kind"`
-	ValidMoves  []int  `json:"validMoves,omitempty"`   // slots utilizables
-	ValidSwitch []int  `json:"validSwitch,omitempty"`  // slots de equipo elegibles
+	ValidMoves  []int  `json:"validMoves,omitempty"`  // slots utilizables
+	ValidSwitch []int  `json:"validSwitch,omitempty"` // slots de equipo elegibles
 	Trapped     bool   `json:"trapped,omitempty"`
 }
 

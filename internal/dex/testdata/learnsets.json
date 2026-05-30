@@ -3,7 +3,7 @@
     "charizard": ["flamethrower"]
   },
   "9": {
-    "charizard": ["flamethrower", "airslash", "dragonpulse"],
-    "pikachu": ["thunderbolt", "voltswitch"]
+    "charizard": ["flamethrower", "airslash", "dragonpulse", "tackle"],
+    "pikachu": ["thunderbolt", "voltswitch", "tackle"]
   }
 }
