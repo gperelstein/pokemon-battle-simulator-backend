@@ -18,8 +18,16 @@ const (
 
 // Stats es el vector de 6 stats. En Gen 1 SpA y SpD coinciden (Special único);
 // se modela igual y el gen.Rules se encarga de la equivalencia.
+//
+// Los tags JSON coinciden con las claves del dataset exportado de Showdown
+// (ver scripts/showdown-export) para que el dex deserialice BaseStats directo.
 type Stats struct {
-	HP, Atk, Def, SpA, SpD, Spe int
+	HP  int `json:"hp"`
+	Atk int `json:"atk"`
+	Def int `json:"def"`
+	SpA int `json:"spa"`
+	SpD int `json:"spd"`
+	Spe int `json:"spe"`
 }
 
 // MoveCategory: físico, especial o estado.

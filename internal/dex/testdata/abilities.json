@@ -1,0 +1,8 @@
+{
+  "9": {
+    "blaze": {"id":"blaze","name":"Blaze"},
+    "solarpower": {"id":"solarpower","name":"Solar Power"},
+    "static": {"id":"static","name":"Static"},
+    "lightningrod": {"id":"lightningrod","name":"Lightning Rod"}
+  }
+}

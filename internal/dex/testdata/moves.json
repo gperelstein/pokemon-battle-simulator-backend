@@ -1,0 +1,10 @@
+{
+  "1": {
+    "thunderbolt": {"id":"thunderbolt","name":"Thunderbolt","type":"electric","category":"special","power":95,"accuracy":100,"pp":15,"priority":0,"target":"normal","flags":{}}
+  },
+  "9": {
+    "thunderbolt": {"id":"thunderbolt","name":"Thunderbolt","type":"electric","category":"special","power":90,"accuracy":100,"pp":15,"priority":0,"target":"normal","flags":{"protect":true,"mirror":true,"metronome":true}},
+    "flamethrower": {"id":"flamethrower","name":"Flamethrower","type":"fire","category":"special","power":90,"accuracy":100,"pp":15,"priority":0,"target":"normal","flags":{"protect":true,"mirror":true,"metronome":true}},
+    "swift": {"id":"swift","name":"Swift","type":"normal","category":"special","power":60,"accuracy":0,"pp":20,"priority":0,"target":"allAdjacentFoes","flags":{"protect":true,"mirror":true,"metronome":true}}
+  }
+}

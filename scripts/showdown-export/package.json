@@ -1,0 +1,14 @@
+{
+  "name": "showdown-export",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Exporta el dataset de Pokemon Showdown (via @pkmn/dex) a los JSON que consume internal/dex.Load.",
+  "scripts": {
+    "export": "node export.mjs"
+  },
+  "dependencies": {
+    "@pkmn/data": "^0.10.9",
+    "@pkmn/dex": "^0.10.9"
+  }
+}

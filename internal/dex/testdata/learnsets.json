@@ -1,0 +1,9 @@
+{
+  "1": {
+    "charizard": ["flamethrower"]
+  },
+  "9": {
+    "charizard": ["flamethrower", "airslash", "dragonpulse"],
+    "pikachu": ["thunderbolt", "voltswitch"]
+  }
+}

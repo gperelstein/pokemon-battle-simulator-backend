@@ -1,0 +1,11 @@
+# Datos exportados del dataset de Showdown (generados por scripts/showdown-export).
+# No se versionan: son grandes y reproducibles corriendo el export.
+/data/
+
+# Node (scripts/showdown-export)
+node_modules/
+scripts/**/node_modules/
+
+# Go
+*.test
+*.out

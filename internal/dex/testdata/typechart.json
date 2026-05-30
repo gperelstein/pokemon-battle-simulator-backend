@@ -1,0 +1,6 @@
+{
+  "9": {
+    "fire": {"grass":2,"water":0.5,"fire":0.5},
+    "electric": {"water":2,"flying":2,"ground":0,"electric":0.5}
+  }
+}
