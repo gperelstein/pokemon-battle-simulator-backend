@@ -8,6 +8,10 @@
     "swift": {"id":"swift","name":"Swift","type":"normal","category":"special","power":60,"accuracy":0,"pp":20,"priority":0,"target":"allAdjacentFoes","flags":{"protect":true,"mirror":true,"metronome":true}},
     "tackle": {"id":"tackle","name":"Tackle","type":"normal","category":"physical","power":40,"accuracy":100,"pp":35,"priority":0,"target":"normal","flags":{"contact":true,"protect":true,"mirror":true}},
     "earthquake": {"id":"earthquake","name":"Earthquake","type":"ground","category":"physical","power":100,"accuracy":100,"pp":10,"priority":0,"target":"allAdjacentFoes","flags":{"protect":true,"mirror":true}},
-    "quickattack": {"id":"quickattack","name":"Quick Attack","type":"normal","category":"physical","power":40,"accuracy":100,"pp":30,"priority":1,"target":"normal","flags":{"contact":true,"protect":true,"mirror":true}}
+    "quickattack": {"id":"quickattack","name":"Quick Attack","type":"normal","category":"physical","power":40,"accuracy":100,"pp":30,"priority":1,"target":"normal","flags":{"contact":true,"protect":true,"mirror":true}},
+    "uturn": {"id":"uturn","name":"U-turn","type":"bug","category":"physical","power":70,"accuracy":100,"pp":20,"priority":0,"target":"normal","selfSwitch":"true","flags":{"contact":true,"protect":true,"mirror":true}},
+    "voltswitch": {"id":"voltswitch","name":"Volt Switch","type":"electric","category":"special","power":70,"accuracy":100,"pp":20,"priority":0,"target":"normal","selfSwitch":"true","flags":{"protect":true,"mirror":true}},
+    "roar": {"id":"roar","name":"Roar","type":"normal","category":"status","power":0,"accuracy":0,"pp":20,"priority":-6,"target":"normal","forceSwitch":true,"flags":{"reflectable":true,"mirror":true,"sound":true}},
+    "dragontail": {"id":"dragontail","name":"Dragon Tail","type":"dragon","category":"physical","power":60,"accuracy":90,"pp":10,"priority":-6,"target":"normal","forceSwitch":true,"flags":{"contact":true,"protect":true,"mirror":true}}
   }
 }

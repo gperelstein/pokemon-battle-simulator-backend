@@ -337,6 +337,153 @@ func TestDeterministicWithSameSeed(t *testing.T) {
 	}
 }
 
+func TestUTurnPausesForAttackerSwitch(t *testing.T) {
+	// Charizard (más rápido) usa U-turn: pega y luego SU dueño debe elegir relevo
+	// a mitad de turno, antes de que B mueva.
+	a := team(mon("charizard", "uturn"), mon("pikachu", "tackle"))
+	b := team(mon("pikachu", "tackle"))
+	e, st := newBattle(t, 11, a, b)
+
+	e.Apply(st, moveAction(battle.SideA, 0))
+	evs, err := e.Apply(st, moveAction(battle.SideB, 0))
+	if err != nil {
+		t.Fatalf("Apply: %v", err)
+	}
+
+	if st.Phase != battle.PhaseAwaitingForcedSwitch {
+		t.Fatalf("Phase = %v, want AwaitingForcedSwitch (pausa de U-turn)", st.Phase)
+	}
+	if len(st.PendingSwitches) != 1 || st.PendingSwitches[0] != battle.SideA {
+		t.Fatalf("PendingSwitches = %v, want [SideA]", st.PendingSwitches)
+	}
+	// U-turn pegó pero B todavía NO tackleó (su move quedó en la cola).
+	if count(evs, battle.EventRequestForcedSwitch) != 1 {
+		t.Errorf("RequestForcedSwitch = %d, want 1", count(evs, battle.EventRequestForcedSwitch))
+	}
+	if count(evs, battle.EventMoveUsed) != 1 {
+		t.Errorf("MoveUsed = %d antes de la pausa, want 1 (solo U-turn)", count(evs, battle.EventMoveUsed))
+	}
+
+	// A elige a pikachu (slot 1). Se reanuda: B tackle pega al nuevo activo.
+	evs2, err := e.Apply(st, battle.Action{Kind: battle.ActionForcedSwitch, Side: battle.SideA, Switch: &battle.SwitchAction{TeamSlot: 1}})
+	if err != nil {
+		t.Fatalf("forced switch: %v", err)
+	}
+	if st.Sides[battle.SideA].Active != 1 {
+		t.Errorf("A.Active = %d, want 1", st.Sides[battle.SideA].Active)
+	}
+	if st.Phase != battle.PhaseAwaitingActions || st.Turn != 2 {
+		t.Errorf("tras reanudar: Phase=%v Turn=%d, want AwaitingActions/2", st.Phase, st.Turn)
+	}
+	// B sí ejecutó su tackle al reanudar.
+	if count(evs2, battle.EventMoveUsed) != 1 {
+		t.Errorf("MoveUsed al reanudar = %d, want 1 (tackle de B)", count(evs2, battle.EventMoveUsed))
+	}
+}
+
+func TestUTurnNoReplacementNoPause(t *testing.T) {
+	// Con un solo Pokémon, U-turn solo pega: no hay a quién cambiar, no pausa.
+	a := team(mon("charizard", "uturn"))
+	b := team(mon("pikachu", "tackle"))
+	e, st := newBattle(t, 11, a, b)
+
+	e.Apply(st, moveAction(battle.SideA, 0))
+	_, err := e.Apply(st, moveAction(battle.SideB, 0))
+	if err != nil {
+		t.Fatalf("Apply: %v", err)
+	}
+	if st.Phase != battle.PhaseAwaitingActions || st.Turn != 2 {
+		t.Errorf("Phase=%v Turn=%d, want AwaitingActions/2 (sin pausa)", st.Phase, st.Turn)
+	}
+	if len(st.PendingSwitches) != 0 {
+		t.Errorf("PendingSwitches = %v, want vacío", st.PendingSwitches)
+	}
+}
+
+func TestRoarDragsDefenderRandomly(t *testing.T) {
+	// Roar (prioridad -6) saca al activo del rival a un Pokémon al azar del banco.
+	a := team(mon("charizard", "roar"))
+	b := team(mon("pikachu", "tackle"), mon("charizard", "tackle"))
+	e, st := newBattle(t, 8, a, b)
+
+	e.Apply(st, moveAction(battle.SideA, 0))
+	evs, err := e.Apply(st, moveAction(battle.SideB, 0))
+	if err != nil {
+		t.Fatalf("Apply: %v", err)
+	}
+
+	// Único reemplazo posible es el slot 1 → B queda con ese activo. Sin pausa.
+	if st.Sides[battle.SideB].Active != 1 {
+		t.Errorf("B.Active = %d, want 1 (arrastrado)", st.Sides[battle.SideB].Active)
+	}
+	if st.Phase != battle.PhaseAwaitingActions || st.Turn != 2 {
+		t.Errorf("Phase=%v Turn=%d, want AwaitingActions/2", st.Phase, st.Turn)
+	}
+	dragged := false
+	for _, ev := range evs {
+		if ev.Kind == battle.EventSwitchIn && ev.Side == battle.SideB && ev.Reason == "drag" {
+			dragged = true
+		}
+	}
+	if !dragged {
+		t.Error("falta el SwitchIn con reason \"drag\"")
+	}
+}
+
+func TestDragonTailDamagesAndDrags(t *testing.T) {
+	// Dragon Tail pega y arrastra. Buscamos un seed donde acierte (accuracy 90).
+	for seed := uint64(0); seed < 20; seed++ {
+		a := team(mon("charizard", "dragontail"))
+		b := team(mon("pikachu", "tackle"), mon("charizard", "tackle"))
+		e, st := newBattle(t, seed, a, b)
+		e.Apply(st, moveAction(battle.SideA, 0))
+		evs, _ := e.Apply(st, moveAction(battle.SideB, 0))
+
+		if count(evs, battle.EventMiss) > 0 {
+			continue // falló por accuracy; probamos otro seed
+		}
+		// Acertó: debe haber pegado a B y haberlo arrastrado al slot 1.
+		damagedB := false
+		for _, ev := range evs {
+			if ev.Kind == battle.EventDamage && ev.Side == battle.SideB {
+				damagedB = true
+			}
+		}
+		if !damagedB {
+			t.Fatalf("seed %d: Dragon Tail no pegó a B", seed)
+		}
+		if st.Sides[battle.SideB].Active != 1 {
+			t.Fatalf("seed %d: B.Active = %d, want 1 (arrastrado tras el daño)", seed, st.Sides[battle.SideB].Active)
+		}
+		return // ok
+	}
+	t.Fatal("ningún seed produjo un acierto de Dragon Tail en 20 intentos")
+}
+
+func TestForceSwitchFailsWithoutReplacement(t *testing.T) {
+	// Roar contra un rival con un solo Pokémon: no pasa nada (no hay banco).
+	a := team(mon("charizard", "roar"))
+	b := team(mon("pikachu", "tackle"))
+	e, st := newBattle(t, 8, a, b)
+
+	e.Apply(st, moveAction(battle.SideA, 0))
+	evs, err := e.Apply(st, moveAction(battle.SideB, 0))
+	if err != nil {
+		t.Fatalf("Apply: %v", err)
+	}
+	if st.Sides[battle.SideB].Active != 0 {
+		t.Errorf("B.Active = %d, want 0 (no hay a quién arrastrar)", st.Sides[battle.SideB].Active)
+	}
+	if st.Phase != battle.PhaseAwaitingActions || st.Turn != 2 {
+		t.Errorf("Phase=%v Turn=%d, want AwaitingActions/2", st.Phase, st.Turn)
+	}
+	for _, ev := range evs {
+		if ev.Kind == battle.EventSwitchIn && ev.Reason == "drag" {
+			t.Error("no debería haber drag sin reemplazo")
+		}
+	}
+}
+
 func TestInvalidChoices(t *testing.T) {
 	e, st := newBattle(t, 1, team(mon("charizard", "flamethrower")), team(mon("pikachu", "thunderbolt")))
 

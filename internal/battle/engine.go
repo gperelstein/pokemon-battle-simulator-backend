@@ -209,8 +209,11 @@ func (e *Engine) orderMovers(state *State, movers []SideID, r rng.RNG) []SideID 
 	return ordered
 }
 
-// process drena la cola en PhaseResolving. Cuando se vacía, decide qué sigue
-// (forced switch por faint, fin de batalla, o próximo turno) en advance.
+// process drena la cola en PhaseResolving. Si encuentra un
+// QueueRequestForcedSwitch (lo empuja un move con selfSwitch, p.ej. U-turn),
+// pausa a PhaseAwaitingForcedSwitch dejando el resto de la cola intacto. Cuando
+// la cola se vacía, decide qué sigue (forced switch por faint, fin de batalla,
+// o próximo turno) en advance.
 func (e *Engine) process(state *State, r rng.RNG) []Event {
 	var evs []Event
 	for {
@@ -220,12 +223,16 @@ func (e *Engine) process(state *State, r rng.RNG) []Event {
 		}
 		switch it.Kind {
 		case QueueSwitch:
-			evs = append(evs, e.executeSwitch(state, it.Side, it.Switch.TeamSlot)...)
+			evs = append(evs, e.executeSwitch(state, it.Side, it.Switch.TeamSlot, "")...)
 		case QueueMove:
 			evs = append(evs, e.executeMove(state, it.Side, it.MoveSlot, r)...)
+		case QueueRequestForcedSwitch:
+			// Pausa mid-turn: el atacante de un selfSwitch (U-turn/Volt Switch)
+			// debe elegir relevo. La cola queda intacta y se reanuda al recibirlo.
+			state.PendingSwitches = append(state.PendingSwitches, it.Side)
+			state.Phase = PhaseAwaitingForcedSwitch
+			return append(evs, Event{Kind: EventRequestForcedSwitch, Side: it.Side})
 		}
-		// QueueRequestForcedSwitch / residuales: pasos posteriores (U-turn,
-		// end-of-turn). El motor mínimo solo pausa por faints, al vaciar la cola.
 	}
 	return append(evs, e.advance(state)...)
 }
@@ -248,18 +255,44 @@ func (e *Engine) executeMove(state *State, side SideID, slot int, r rng.RNG) []E
 	evs := []Event{{Kind: EventMoveUsed, Side: side, Slot: state.Sides[side].Active, MoveID: moveID}}
 
 	move, ok := e.Dex.Move(e.Rules.Gen, moveID)
-	if !ok || move.Category == pokemon.CategoryStatus || move.Power <= 0 {
-		return evs // move de estado o desconocido: no-op (efectos en pasos posteriores)
+	if !ok {
+		return evs // move desconocido: no-op
 	}
 
 	if !e.rollHit(move, attacker, defender, r) {
 		return append(evs, Event{Kind: EventMiss, Side: side, MoveID: moveID, Reason: "miss"})
 	}
 
-	eff := e.effectiveness(move, defender)
-	if eff == 0 {
-		return append(evs, Event{Kind: EventImmune, Side: foe, Slot: foeSlot, MoveID: moveID})
+	isDamaging := move.Category != pokemon.CategoryStatus && move.Power > 0
+	if isDamaging {
+		eff := e.effectiveness(move, defender)
+		if eff == 0 {
+			// Inmune: el move falla por completo (sin daño ni switch forzado).
+			return append(evs, Event{Kind: EventImmune, Side: foe, Slot: foeSlot, MoveID: moveID})
+		}
+		evs = append(evs, e.applyDamage(state, side, foe, move, eff, r)...)
 	}
+	// (Los moves de estado que no son switch siguen siendo no-op por ahora;
+	// sus efectos —status, boosts— llegan en pasos posteriores.)
+
+	// Efectos de cambio forzado, después del daño:
+	if move.ForceSwitch {
+		evs = append(evs, e.dragOut(state, foe, r)...)
+	}
+	if move.SelfSwitch != "" && !attacker.Fainted && hasReplacement(&state.Sides[side]) {
+		// El atacante elige relevo: se pausa cuando process saque este item.
+		// (copyvolatile de Baton Pass —transferir boosts— queda pendiente.)
+		state.Queue.PushFront(QueueItem{Kind: QueueRequestForcedSwitch, Side: side})
+	}
+	return evs
+}
+
+// applyDamage calcula y aplica el daño de un move que pega, y devuelve los
+// eventos (crit, efectividad, daño, faint). eff ya viene calculado (>0).
+func (e *Engine) applyDamage(state *State, side, foe SideID, move pokemon.Move, eff float64, r rng.RNG) []Event {
+	attacker := e.active(state, side)
+	defender := e.active(state, foe)
+	foeSlot := state.Sides[foe].Active
 
 	crit := e.rollCrit(r)
 	dmg := e.calcDamage(attacker, defender, move, crit, eff, r)
@@ -268,6 +301,7 @@ func (e *Engine) executeMove(state *State, side SideID, slot int, r rng.RNG) []E
 	}
 	defender.HP -= dmg
 
+	var evs []Event
 	if crit {
 		evs = append(evs, Event{Kind: EventCrit, Side: foe, Slot: foeSlot})
 	}
@@ -277,7 +311,7 @@ func (e *Engine) executeMove(state *State, side SideID, slot int, r rng.RNG) []E
 	case eff < 1:
 		evs = append(evs, Event{Kind: EventNotVeryEffective, Side: foe, Slot: foeSlot})
 	}
-	evs = append(evs, Event{Kind: EventDamage, Side: foe, Slot: foeSlot, MoveID: moveID, Amount: dmg})
+	evs = append(evs, Event{Kind: EventDamage, Side: foe, Slot: foeSlot, MoveID: move.ID, Amount: dmg})
 
 	if defender.HP <= 0 {
 		defender.HP = 0
@@ -289,16 +323,38 @@ func (e *Engine) executeMove(state *State, side SideID, slot int, r rng.RNG) []E
 
 // executeSwitch cambia el activo de side al slot dado. Resetea los boosts del
 // que entra (mecánica estándar). Emite switch-out solo si el saliente no está
-// debilitado (en un forced switch por faint no hay salida que animar).
-func (e *Engine) executeSwitch(state *State, side SideID, slot int) []Event {
+// debilitado (en un forced switch por faint no hay salida que animar). reason
+// queda en los eventos ("" voluntario/replacement, "drag" para Roar/Dragon Tail).
+func (e *Engine) executeSwitch(state *State, side SideID, slot int, reason string) []Event {
 	s := &state.Sides[side]
 	var evs []Event
 	if !s.Team[s.Active].Fainted {
-		evs = append(evs, Event{Kind: EventSwitchOut, Side: side, Slot: s.Active})
+		evs = append(evs, Event{Kind: EventSwitchOut, Side: side, Slot: s.Active, Reason: reason})
 	}
 	s.Active = slot
 	s.Team[slot].Boosts = Boosts{}
-	return append(evs, Event{Kind: EventSwitchIn, Side: side, Slot: slot})
+	return append(evs, Event{Kind: EventSwitchIn, Side: side, Slot: slot, Reason: reason})
+}
+
+// dragOut saca al activo de side a un Pokémon vivo del banco elegido al azar
+// (Roar, Whirlwind, Dragon Tail, Circle Throw). No hace nada si el activo está
+// debilitado (lo resuelve el flujo de faint) o si no hay reemplazo.
+func (e *Engine) dragOut(state *State, side SideID, r rng.RNG) []Event {
+	s := &state.Sides[side]
+	if s.Team[s.Active].Fainted {
+		return nil
+	}
+	var choices []int
+	for i := range s.Team {
+		if i != s.Active && !s.Team[i].Empty && !s.Team[i].Fainted {
+			choices = append(choices, i)
+		}
+	}
+	if len(choices) == 0 {
+		return nil
+	}
+	pick := choices[r.IntN(len(choices))]
+	return e.executeSwitch(state, side, pick, "drag")
 }
 
 // advance se llama cuando la cola se vació. Decide la transición:
@@ -330,6 +386,7 @@ func (e *Engine) advance(state *State) []Event {
 	}
 
 	state.Turn++
+	state.ResumeCount = 0
 	state.Phase = PhaseAwaitingActions
 	return append(evs, Event{Kind: EventTurnStarted, Amount: state.Turn})
 }
@@ -348,17 +405,21 @@ func (e *Engine) applyForcedSwitch(state *State, action Action) ([]Event, error)
 		return nil, err
 	}
 
-	evs := e.executeSwitch(state, side, action.Switch.TeamSlot)
+	evs := e.executeSwitch(state, side, action.Switch.TeamSlot, "")
 	state.PendingSwitches = remove(state.PendingSwitches, side)
 
 	if len(state.PendingSwitches) > 0 {
-		return evs, nil // falta el otro lado (doble KO)
+		return evs, nil // falta el otro lado (doble KO o ambos con selfSwitch)
 	}
 
-	// Todos los forced switches resueltos. El motor mínimo no pausa a mitad de
-	// cola, así que la cola está vacía y simplemente avanzamos al próximo turno.
-	// (Cuando exista U-turn, acá habría que reanudar process si la cola tiene
-	// items pendientes.)
+	// Todos los forced switches resueltos. Si la cola todavía tiene items, fue
+	// una pausa mid-turn (U-turn): se reanuda el drenado con un RNG nuevo e
+	// independiente. Si está vacía, fue un faint de fin de turno: avanza.
+	if !state.Queue.Empty() {
+		state.ResumeCount++
+		state.Phase = PhaseResolving
+		return append(evs, e.process(state, rng.New(turnSeed(state)))...), nil
+	}
 	return append(evs, e.advance(state)...), nil
 }
 
@@ -402,7 +463,12 @@ func (s SideID) opp() SideID {
 	return SideA
 }
 
-func turnSeed(state *State) uint64 { return state.Seed + uint64(state.Turn) }
+// turnSeed deriva la semilla del segmento de resolución actual a partir de
+// (Seed, Turn, ResumeCount). El multiplicador primo evita que turnos y
+// reanudaciones colisionen; rng.New mezcla además con el número áureo.
+func turnSeed(state *State) uint64 {
+	return state.Seed + uint64(state.Turn)*0x100000001b3 + uint64(state.ResumeCount)
+}
 
 // hasReplacement indica si el lado tiene algún Pokémon vivo distinto del activo
 // para mandar a la batalla.

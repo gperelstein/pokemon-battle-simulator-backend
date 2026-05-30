@@ -32,6 +32,12 @@ type State struct {
 
 	// Contadores
 	Turn int
+	// ResumeCount cuenta las veces que la resolución se reanudó tras una pausa
+	// (forced switch) dentro del mismo turno. Se usa para derivar un RNG
+	// independiente por segmento de resolución (ver turnSeed), de modo que lo
+	// que pasa después de un U-turn no quede correlacionado con lo de antes.
+	// Se resetea a 0 al empezar cada turno.
+	ResumeCount int
 
 	// Resultado
 	Winner *SideID // nil si la batalla sigue

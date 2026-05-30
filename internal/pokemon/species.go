@@ -26,6 +26,13 @@ type Move struct {
 	// EffectID referencia el efecto registrado en battle/effect. Un move sin
 	// efecto registrado se trata como daño puro (o no-op si es status).
 	EffectID string
+	// SelfSwitch != "" hace que el atacante cambie tras usar el move (U-turn,
+	// Volt Switch, Teleport…). Valores: "true", "copyvolatile" (Baton Pass,
+	// copia boosts/volátiles), "shedtail". El cambio lo elige el jugador.
+	SelfSwitch string `json:"selfSwitch"`
+	// ForceSwitch saca al defensor a un Pokémon aleatorio del banco (Roar,
+	// Whirlwind, Dragon Tail, Circle Throw).
+	ForceSwitch bool `json:"forceSwitch"`
 	// Flags varias: contact, sound, punch, etc. Necesarias para interacciones.
 	Flags map[string]bool
 }

@@ -82,6 +82,11 @@ function exportMoves(gen) {
       pp: mv.pp,
       priority: mv.priority,
       target: mv.target,
+      // selfSwitch: "" | "true" | "copyvolatile" (Baton Pass) | "shedtail".
+      // El atacante cambia tras usar el move (U-turn, Volt Switch, Teleport…).
+      selfSwitch: mv.selfSwitch === true ? 'true' : mv.selfSwitch || '',
+      // forceSwitch: el move saca al defensor (Roar, Whirlwind, Dragon Tail…).
+      forceSwitch: mv.forceSwitch === true,
       flags,
     };
   }
