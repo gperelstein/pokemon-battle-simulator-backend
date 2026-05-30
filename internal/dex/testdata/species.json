@@ -4,6 +4,7 @@
   },
   "9": {
     "charizard": {"id":"charizard","name":"Charizard","types":["fire","flying"],"baseStats":{"hp":78,"atk":84,"def":78,"spa":109,"spd":85,"spe":100},"abilities":["blaze","solarpower"]},
-    "pikachu": {"id":"pikachu","name":"Pikachu","types":["electric"],"baseStats":{"hp":35,"atk":55,"def":40,"spa":50,"spd":50,"spe":90},"abilities":["static","lightningrod"]}
+    "pikachu": {"id":"pikachu","name":"Pikachu","types":["electric"],"baseStats":{"hp":35,"atk":55,"def":40,"spa":50,"spd":50,"spe":90},"abilities":["static","lightningrod"]},
+    "golem": {"id":"golem","name":"Golem","types":["rock","ground"],"baseStats":{"hp":80,"atk":120,"def":130,"spa":55,"spd":65,"spe":45},"abilities":["rockhead","sturdy"]}
   }
 }

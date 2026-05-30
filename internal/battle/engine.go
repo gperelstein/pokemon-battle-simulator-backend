@@ -357,13 +357,16 @@ func (e *Engine) dragOut(state *State, side SideID, r rng.RNG) []Event {
 	return e.executeSwitch(state, side, pick, "drag")
 }
 
-// advance se llama cuando la cola se vació. Decide la transición:
-//   - algún activo debilitado sin reemplazo → fin de batalla (o empate).
-//   - algún activo debilitado con reemplazo → PhaseAwaitingForcedSwitch.
-//   - sin faints → próximo turno (PhaseAwaitingActions).
+// advance se llama cuando la cola se vació. Resuelve la secuencia de fin de
+// turno por etapas, pausando en PhaseAwaitingForcedSwitch cada vez que hace
+// falta input y reanudándose (vía applyForcedSwitch) hasta llegar al próximo
+// turno:
 //
-// (Los residuales de fin de turno —clima, status, leftovers— son el paso 6 y
-// todavía no se ejecutan acá.)
+//  1. faints (de moves o de residuales) sin reemplazo → fin de batalla;
+//     con reemplazo → forced switch.
+//  2. sin faints pendientes y residuales aún no aplicados → end-of-turn
+//     (clima, status, leftovers, leech seed), que puede volver a causar faints.
+//  3. residuales ya aplicados y sin faints → próximo turno.
 func (e *Engine) advance(state *State) []Event {
 	aLoses := e.active(state, SideA).Fainted && !hasReplacement(&state.Sides[SideA])
 	bLoses := e.active(state, SideB).Fainted && !hasReplacement(&state.Sides[SideB])
@@ -385,8 +388,18 @@ func (e *Engine) advance(state *State) []Event {
 		return evs
 	}
 
+	// Sin faints pendientes: aplicar residuales de fin de turno una sola vez.
+	if !state.EotDone {
+		state.EotDone = true
+		state.Phase = PhaseEndOfTurn
+		evs = append(evs, e.endOfTurn(state)...)
+		// Los residuales pueden haber noqueado a alguien: re-evaluar.
+		return append(evs, e.advance(state)...)
+	}
+
 	state.Turn++
 	state.ResumeCount = 0
+	state.EotDone = false
 	state.Phase = PhaseAwaitingActions
 	return append(evs, Event{Kind: EventTurnStarted, Amount: state.Turn})
 }

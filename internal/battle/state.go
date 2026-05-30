@@ -39,6 +39,12 @@ type State struct {
 	// Se resetea a 0 al empezar cada turno.
 	ResumeCount int
 
+	// EotDone indica si los residuales de fin de turno (clima, status,
+	// leftovers, leech seed) ya se aplicaron en el turno actual. Evita
+	// re-ejecutarlos cuando un faint de fin de turno pausa y reanuda. Se
+	// resetea a false al empezar cada turno.
+	EotDone bool
+
 	// Resultado
 	Winner *SideID // nil si la batalla sigue
 }
