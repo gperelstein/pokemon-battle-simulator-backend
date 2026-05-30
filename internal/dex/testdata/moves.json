@@ -5,6 +5,9 @@
   "9": {
     "thunderbolt": {"id":"thunderbolt","name":"Thunderbolt","type":"electric","category":"special","power":90,"accuracy":100,"pp":15,"priority":0,"target":"normal","flags":{"protect":true,"mirror":true,"metronome":true}},
     "flamethrower": {"id":"flamethrower","name":"Flamethrower","type":"fire","category":"special","power":90,"accuracy":100,"pp":15,"priority":0,"target":"normal","flags":{"protect":true,"mirror":true,"metronome":true}},
-    "swift": {"id":"swift","name":"Swift","type":"normal","category":"special","power":60,"accuracy":0,"pp":20,"priority":0,"target":"allAdjacentFoes","flags":{"protect":true,"mirror":true,"metronome":true}}
+    "swift": {"id":"swift","name":"Swift","type":"normal","category":"special","power":60,"accuracy":0,"pp":20,"priority":0,"target":"allAdjacentFoes","flags":{"protect":true,"mirror":true,"metronome":true}},
+    "tackle": {"id":"tackle","name":"Tackle","type":"normal","category":"physical","power":40,"accuracy":100,"pp":35,"priority":0,"target":"normal","flags":{"contact":true,"protect":true,"mirror":true}},
+    "earthquake": {"id":"earthquake","name":"Earthquake","type":"ground","category":"physical","power":100,"accuracy":100,"pp":10,"priority":0,"target":"allAdjacentFoes","flags":{"protect":true,"mirror":true}},
+    "quickattack": {"id":"quickattack","name":"Quick Attack","type":"normal","category":"physical","power":40,"accuracy":100,"pp":30,"priority":1,"target":"normal","flags":{"contact":true,"protect":true,"mirror":true}}
   }
 }

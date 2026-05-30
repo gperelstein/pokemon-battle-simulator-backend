@@ -7,6 +7,7 @@ import (
 
 	"github.com/gmperelstein/pokemon-battle-simulator-backend/internal/dex"
 	"github.com/gmperelstein/pokemon-battle-simulator-backend/internal/gen"
+	"github.com/gmperelstein/pokemon-battle-simulator-backend/internal/pokemon"
 	"github.com/gmperelstein/pokemon-battle-simulator-backend/pkg/rng"
 )
 
@@ -243,24 +244,45 @@ func (e *Engine) executeMove(state *State, side SideID, slot int, r rng.RNG) []E
 
 	attacker.PP[slot]--
 	attacker.LastMoveUsed = moveID
+	foeSlot := state.Sides[foe].Active
 	evs := []Event{{Kind: EventMoveUsed, Side: side, Slot: state.Sides[side].Active, MoveID: moveID}}
 
 	move, ok := e.Dex.Move(e.Rules.Gen, moveID)
-	if !ok || move.Power <= 0 {
-		return evs // move de estado o desconocido: no-op en el motor mínimo
+	if !ok || move.Category == pokemon.CategoryStatus || move.Power <= 0 {
+		return evs // move de estado o desconocido: no-op (efectos en pasos posteriores)
 	}
 
-	dmg := dummyDamage(attacker, defender, move, r)
+	if !e.rollHit(move, attacker, defender, r) {
+		return append(evs, Event{Kind: EventMiss, Side: side, MoveID: moveID, Reason: "miss"})
+	}
+
+	eff := e.effectiveness(move, defender)
+	if eff == 0 {
+		return append(evs, Event{Kind: EventImmune, Side: foe, Slot: foeSlot, MoveID: moveID})
+	}
+
+	crit := e.rollCrit(r)
+	dmg := e.calcDamage(attacker, defender, move, crit, eff, r)
 	if dmg > defender.HP {
 		dmg = defender.HP
 	}
 	defender.HP -= dmg
-	evs = append(evs, Event{Kind: EventDamage, Side: foe, Slot: state.Sides[foe].Active, MoveID: moveID, Amount: dmg})
+
+	if crit {
+		evs = append(evs, Event{Kind: EventCrit, Side: foe, Slot: foeSlot})
+	}
+	switch {
+	case eff > 1:
+		evs = append(evs, Event{Kind: EventSuperEffective, Side: foe, Slot: foeSlot})
+	case eff < 1:
+		evs = append(evs, Event{Kind: EventNotVeryEffective, Side: foe, Slot: foeSlot})
+	}
+	evs = append(evs, Event{Kind: EventDamage, Side: foe, Slot: foeSlot, MoveID: moveID, Amount: dmg})
 
 	if defender.HP <= 0 {
 		defender.HP = 0
 		defender.Fainted = true
-		evs = append(evs, Event{Kind: EventFainted, Side: foe, Slot: state.Sides[foe].Active})
+		evs = append(evs, Event{Kind: EventFainted, Side: foe, Slot: foeSlot})
 	}
 	return evs
 }

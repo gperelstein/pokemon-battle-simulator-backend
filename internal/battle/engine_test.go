@@ -103,7 +103,8 @@ func TestStartInitializes(t *testing.T) {
 
 func TestTurnResolvesFasterFirst(t *testing.T) {
 	// Charizard (Spe base 100) es más rápido que Pikachu (Spe base 90).
-	e, st := newBattle(t, 42, team(mon("charizard", "flamethrower")), team(mon("pikachu", "thunderbolt")))
+	// Usan tackle (40 de poder, sin STAB) para que ninguno caiga de un golpe.
+	e, st := newBattle(t, 42, team(mon("charizard", "tackle")), team(mon("pikachu", "tackle")))
 
 	if evs, err := e.Apply(st, moveAction(battle.SideA, 0)); err != nil || len(evs) != 0 {
 		t.Fatalf("primera acción: evs=%v err=%v (se esperaba esperar al rival)", evs, err)
@@ -130,6 +131,67 @@ func TestTurnResolvesFasterFirst(t *testing.T) {
 	}
 	if st.Turn != 2 || st.Phase != battle.PhaseAwaitingActions {
 		t.Errorf("tras el turno: Turn=%d Phase=%v, want 2/AwaitingActions", st.Turn, st.Phase)
+	}
+}
+
+func TestPriorityOverridesSpeed(t *testing.T) {
+	// Pikachu (Spe 90) es más lento, pero Quick Attack (prioridad +1) lo hace
+	// mover antes que el Tackle (prioridad 0) de Charizard.
+	e, st := newBattle(t, 1, team(mon("charizard", "tackle")), team(mon("pikachu", "quickattack")))
+
+	e.Apply(st, moveAction(battle.SideA, 0))
+	evs, err := e.Apply(st, moveAction(battle.SideB, 0))
+	if err != nil {
+		t.Fatalf("Apply: %v", err)
+	}
+	first := evs[firstIndex(evs, battle.EventMoveUsed)]
+	if first.Side != battle.SideB {
+		t.Errorf("primer MoveUsed Side = %v, want SideB (mayor prioridad)", first.Side)
+	}
+}
+
+func TestSuperEffective(t *testing.T) {
+	// Thunderbolt (electric) de Pikachu vs Charizard (fire/flying) → ×2.
+	e, st := newBattle(t, 4, team(mon("charizard", "tackle")), team(mon("pikachu", "thunderbolt")))
+
+	e.Apply(st, moveAction(battle.SideA, 0))
+	evs, _ := e.Apply(st, moveAction(battle.SideB, 0))
+
+	if count(evs, battle.EventSuperEffective) != 1 {
+		t.Fatalf("SuperEffective = %d, want 1", count(evs, battle.EventSuperEffective))
+	}
+}
+
+func TestNotVeryEffective(t *testing.T) {
+	// Flamethrower (fire) vs Charizard (fire/flying) → ×0.5.
+	e, st := newBattle(t, 4, team(mon("charizard", "flamethrower")), team(mon("charizard", "tackle")))
+
+	e.Apply(st, moveAction(battle.SideA, 0))
+	evs, _ := e.Apply(st, moveAction(battle.SideB, 0))
+
+	if count(evs, battle.EventNotVeryEffective) != 1 {
+		t.Fatalf("NotVeryEffective = %d, want 1", count(evs, battle.EventNotVeryEffective))
+	}
+}
+
+func TestImmunity(t *testing.T) {
+	// Earthquake (ground) vs Charizard (flying) → inmune, sin daño.
+	e, st := newBattle(t, 4, team(mon("charizard", "tackle")), team(mon("pikachu", "earthquake")))
+
+	e.Apply(st, moveAction(battle.SideA, 0))
+	evs, _ := e.Apply(st, moveAction(battle.SideB, 0))
+
+	if count(evs, battle.EventImmune) != 1 {
+		t.Fatalf("Immune = %d, want 1", count(evs, battle.EventImmune))
+	}
+	cz := active(st, battle.SideA)
+	if cz.HP != cz.MaxHP {
+		t.Errorf("charizard recibió daño (%d/%d) pese a ser inmune", cz.HP, cz.MaxHP)
+	}
+	for _, ev := range evs {
+		if ev.Kind == battle.EventDamage && ev.Side == battle.SideA {
+			t.Error("hubo evento de daño sobre el inmune")
+		}
 	}
 }
 
@@ -250,8 +312,8 @@ func TestForfeit(t *testing.T) {
 
 func TestDeterministicWithSameSeed(t *testing.T) {
 	dmg := func(seed uint64) []int {
-		a := team(mon("charizard", "flamethrower"))
-		b := team(mon("pikachu", "thunderbolt"))
+		a := team(mon("charizard", "tackle"))
+		b := team(mon("pikachu", "tackle"))
 		e, st := newBattle(t, seed, a, b)
 		e.Apply(st, moveAction(battle.SideA, 0))
 		evs, _ := e.Apply(st, moveAction(battle.SideB, 0))
