@@ -1,4 +1,4 @@
-module github.com/gmperelstein/pokemon-battle-simulator-backend
+module github.com/gperelstein/pokemon-battle-simulator-backend
 
 go 1.26
 

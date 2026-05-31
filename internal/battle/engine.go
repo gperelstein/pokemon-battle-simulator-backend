@@ -5,10 +5,10 @@ import (
 	"fmt"
 	"sort"
 
-	"github.com/gmperelstein/pokemon-battle-simulator-backend/internal/dex"
-	"github.com/gmperelstein/pokemon-battle-simulator-backend/internal/gen"
-	"github.com/gmperelstein/pokemon-battle-simulator-backend/internal/pokemon"
-	"github.com/gmperelstein/pokemon-battle-simulator-backend/pkg/rng"
+	"github.com/gperelstein/pokemon-battle-simulator-backend/internal/dex"
+	"github.com/gperelstein/pokemon-battle-simulator-backend/internal/gen"
+	"github.com/gperelstein/pokemon-battle-simulator-backend/internal/pokemon"
+	"github.com/gperelstein/pokemon-battle-simulator-backend/pkg/rng"
 )
 
 // Engine ejecuta la lógica de la batalla. Es deliberadamente sincrónico y

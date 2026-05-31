@@ -4,7 +4,7 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/gmperelstein/pokemon-battle-simulator-backend/internal/gen"
+	"github.com/gperelstein/pokemon-battle-simulator-backend/internal/gen"
 )
 
 // Dex es el subconjunto de dex.Dex que necesita la validación de equipos.

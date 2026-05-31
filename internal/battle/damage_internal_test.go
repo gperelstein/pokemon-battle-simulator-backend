@@ -3,10 +3,10 @@ package battle
 import (
 	"testing"
 
-	"github.com/gmperelstein/pokemon-battle-simulator-backend/internal/dex"
-	"github.com/gmperelstein/pokemon-battle-simulator-backend/internal/gen"
-	"github.com/gmperelstein/pokemon-battle-simulator-backend/internal/pokemon"
-	"github.com/gmperelstein/pokemon-battle-simulator-backend/pkg/rng"
+	"github.com/gperelstein/pokemon-battle-simulator-backend/internal/dex"
+	"github.com/gperelstein/pokemon-battle-simulator-backend/internal/gen"
+	"github.com/gperelstein/pokemon-battle-simulator-backend/internal/pokemon"
+	"github.com/gperelstein/pokemon-battle-simulator-backend/pkg/rng"
 )
 
 func testEngine(t *testing.T, genID int) *Engine {

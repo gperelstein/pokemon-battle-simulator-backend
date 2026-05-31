@@ -1,8 +1,8 @@
 package battle
 
 import (
-	"github.com/gmperelstein/pokemon-battle-simulator-backend/internal/gen"
-	"github.com/gmperelstein/pokemon-battle-simulator-backend/internal/pokemon"
+	"github.com/gperelstein/pokemon-battle-simulator-backend/internal/gen"
+	"github.com/gperelstein/pokemon-battle-simulator-backend/internal/pokemon"
 )
 
 // computeStats calcula los stats finales de un set al entrar a la batalla.

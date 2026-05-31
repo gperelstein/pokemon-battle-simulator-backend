@@ -6,8 +6,8 @@ import (
 
 	"github.com/gorilla/websocket"
 
-	"github.com/gmperelstein/pokemon-battle-simulator-backend/internal/battle"
-	"github.com/gmperelstein/pokemon-battle-simulator-backend/internal/protocol"
+	"github.com/gperelstein/pokemon-battle-simulator-backend/internal/battle"
+	"github.com/gperelstein/pokemon-battle-simulator-backend/internal/protocol"
 )
 
 // sendBuffer es el tamaño del buffer de salida por conexión. Si se llena

@@ -3,7 +3,7 @@ package rng_test
 import (
 	"testing"
 
-	"github.com/gmperelstein/pokemon-battle-simulator-backend/pkg/rng"
+	"github.com/gperelstein/pokemon-battle-simulator-backend/pkg/rng"
 )
 
 // draw saca una secuencia mezclada de IntN/Float para comparar reproducibilidad.

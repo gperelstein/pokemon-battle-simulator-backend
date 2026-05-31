@@ -7,7 +7,7 @@ package session
 import (
 	"sync"
 
-	"github.com/gmperelstein/pokemon-battle-simulator-backend/internal/battle"
+	"github.com/gperelstein/pokemon-battle-simulator-backend/internal/battle"
 )
 
 // Store guarda las batallas activas indexadas por id. Los métodos son seguros

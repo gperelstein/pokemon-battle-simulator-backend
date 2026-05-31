@@ -7,8 +7,8 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/gmperelstein/pokemon-battle-simulator-backend/internal/dex"
-	"github.com/gmperelstein/pokemon-battle-simulator-backend/internal/transport/ws"
+	"github.com/gperelstein/pokemon-battle-simulator-backend/internal/dex"
+	"github.com/gperelstein/pokemon-battle-simulator-backend/internal/transport/ws"
 )
 
 func main() {

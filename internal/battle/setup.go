@@ -1,6 +1,6 @@
 package battle
 
-import "github.com/gmperelstein/pokemon-battle-simulator-backend/internal/pokemon"
+import "github.com/gperelstein/pokemon-battle-simulator-backend/internal/pokemon"
 
 // TeamSetup es la entrada de un lado para construir una batalla: el jugador y
 // su equipo ya validado (ver pokemon.ValidateTeam).

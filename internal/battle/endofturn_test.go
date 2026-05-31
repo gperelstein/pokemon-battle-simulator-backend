@@ -3,7 +3,7 @@ package battle_test
 import (
 	"testing"
 
-	"github.com/gmperelstein/pokemon-battle-simulator-backend/internal/battle"
+	"github.com/gperelstein/pokemon-battle-simulator-backend/internal/battle"
 )
 
 // damageWithReason busca el primer evento de daño de un lado con la razón dada.

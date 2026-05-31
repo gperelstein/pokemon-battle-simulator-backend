@@ -1,8 +1,8 @@
 package battle
 
 import (
-	"github.com/gmperelstein/pokemon-battle-simulator-backend/internal/pokemon"
-	"github.com/gmperelstein/pokemon-battle-simulator-backend/pkg/rng"
+	"github.com/gperelstein/pokemon-battle-simulator-backend/internal/pokemon"
+	"github.com/gperelstein/pokemon-battle-simulator-backend/pkg/rng"
 )
 
 // calcDamage computa el daño de un move que pega, usando la fórmula moderna:

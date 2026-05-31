@@ -10,11 +10,11 @@ import (
 
 	gws "github.com/gorilla/websocket"
 
-	"github.com/gmperelstein/pokemon-battle-simulator-backend/internal/battle"
-	"github.com/gmperelstein/pokemon-battle-simulator-backend/internal/dex"
-	"github.com/gmperelstein/pokemon-battle-simulator-backend/internal/pokemon"
-	"github.com/gmperelstein/pokemon-battle-simulator-backend/internal/protocol"
-	"github.com/gmperelstein/pokemon-battle-simulator-backend/internal/transport/ws"
+	"github.com/gperelstein/pokemon-battle-simulator-backend/internal/battle"
+	"github.com/gperelstein/pokemon-battle-simulator-backend/internal/dex"
+	"github.com/gperelstein/pokemon-battle-simulator-backend/internal/pokemon"
+	"github.com/gperelstein/pokemon-battle-simulator-backend/internal/protocol"
+	"github.com/gperelstein/pokemon-battle-simulator-backend/internal/transport/ws"
 )
 
 func newTestServer(t *testing.T) *httptest.Server {

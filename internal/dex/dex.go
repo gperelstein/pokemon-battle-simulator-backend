@@ -6,7 +6,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/gmperelstein/pokemon-battle-simulator-backend/internal/pokemon"
+	"github.com/gperelstein/pokemon-battle-simulator-backend/internal/pokemon"
 )
 
 // Dex es el índice de datos estáticos del juego: species, moves, abilities,

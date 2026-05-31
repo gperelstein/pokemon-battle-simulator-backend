@@ -3,8 +3,8 @@ package dex_test
 import (
 	"testing"
 
-	"github.com/gmperelstein/pokemon-battle-simulator-backend/internal/dex"
-	"github.com/gmperelstein/pokemon-battle-simulator-backend/internal/pokemon"
+	"github.com/gperelstein/pokemon-battle-simulator-backend/internal/dex"
+	"github.com/gperelstein/pokemon-battle-simulator-backend/internal/pokemon"
 )
 
 func load(t *testing.T) dex.Dex {

@@ -19,13 +19,13 @@ import (
 
 	"github.com/gorilla/websocket"
 
-	"github.com/gmperelstein/pokemon-battle-simulator-backend/internal/battle"
-	"github.com/gmperelstein/pokemon-battle-simulator-backend/internal/dex"
-	"github.com/gmperelstein/pokemon-battle-simulator-backend/internal/gen"
-	"github.com/gmperelstein/pokemon-battle-simulator-backend/internal/matchmaking"
-	"github.com/gmperelstein/pokemon-battle-simulator-backend/internal/pokemon"
-	"github.com/gmperelstein/pokemon-battle-simulator-backend/internal/protocol"
-	"github.com/gmperelstein/pokemon-battle-simulator-backend/internal/session"
+	"github.com/gperelstein/pokemon-battle-simulator-backend/internal/battle"
+	"github.com/gperelstein/pokemon-battle-simulator-backend/internal/dex"
+	"github.com/gperelstein/pokemon-battle-simulator-backend/internal/gen"
+	"github.com/gperelstein/pokemon-battle-simulator-backend/internal/matchmaking"
+	"github.com/gperelstein/pokemon-battle-simulator-backend/internal/pokemon"
+	"github.com/gperelstein/pokemon-battle-simulator-backend/internal/protocol"
+	"github.com/gperelstein/pokemon-battle-simulator-backend/internal/session"
 )
 
 // Server agrupa las dependencias del transporte. Una sola instancia para todo

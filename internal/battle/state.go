@@ -1,7 +1,7 @@
 package battle
 
 import (
-	"github.com/gmperelstein/pokemon-battle-simulator-backend/internal/pokemon"
+	"github.com/gperelstein/pokemon-battle-simulator-backend/internal/pokemon"
 )
 
 // State es el estado completo de una batalla en curso. Es el "documento" que

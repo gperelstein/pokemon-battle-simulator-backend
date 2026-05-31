@@ -1,6 +1,6 @@
 package ws
 
-import "github.com/gmperelstein/pokemon-battle-simulator-backend/internal/battle"
+import "github.com/gperelstein/pokemon-battle-simulator-backend/internal/battle"
 
 // publicView es el snapshot que ve un jugador concreto: su propio lado completo
 // y el del rival con información limitada (sin moves/PP/item/ability ni HP
