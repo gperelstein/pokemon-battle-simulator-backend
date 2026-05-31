@@ -1,5 +1,7 @@
 package battle
 
+import "github.com/gperelstein/pokemon-battle-simulator-backend/pkg/rng"
+
 // endOfTurn aplica los residuales de fin de turno, en orden: clima (daño),
 // luego por cada activo en orden de velocidad sus efectos (leftovers, leech
 // seed, status), y por último el descuento de duración del clima.
@@ -12,11 +14,13 @@ package battle
 // inflijan status, clima o leech seed (movepool, paso 8). Acá solo está el
 // motor que los resuelve a partir del estado.
 func (e *Engine) endOfTurn(state *State) []Event {
+	r := rng.New(turnSeed(state))
 	evs := e.weatherDamage(state)
 	for _, side := range e.residualOrder(state) {
 		evs = append(evs, e.leftoversResidual(state, side)...)
 		evs = append(evs, e.leechSeedResidual(state, side)...)
 		evs = append(evs, e.statusResidual(state, side)...)
+		evs = append(evs, e.abilityResidual(state, side, r)...) // Speed Boost…
 	}
 	return append(evs, e.tickWeather(state)...)
 }
@@ -25,7 +29,7 @@ func (e *Engine) endOfTurn(state *State) []Event {
 // primero; empate → SideA). Importa para decidir quién cae primero si dos
 // efectos noquean en el mismo fin de turno.
 func (e *Engine) residualOrder(state *State) [2]SideID {
-	if e.active(state, SideA).Stats.Spe >= e.active(state, SideB).Stats.Spe {
+	if e.effectiveSpeed(e.active(state, SideA)) >= e.effectiveSpeed(e.active(state, SideB)) {
 		return [2]SideID{SideA, SideB}
 	}
 	return [2]SideID{SideB, SideA}

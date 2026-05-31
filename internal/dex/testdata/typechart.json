@@ -2,6 +2,8 @@
   "9": {
     "fire": {"grass":2,"water":0.5,"fire":0.5},
     "electric": {"water":2,"flying":2,"ground":0,"electric":0.5},
-    "ground": {"flying":0,"fire":2,"electric":2,"grass":0.5}
+    "ground": {"flying":0,"fire":2,"electric":2,"grass":0.5},
+    "grass": {"water":2,"ground":2,"rock":2,"fire":0.5,"grass":0.5,"poison":0.5,"flying":0.5,"bug":0.5,"dragon":0.5,"steel":0.5},
+    "ice": {"grass":2,"ground":2,"flying":2,"dragon":2,"fire":0.5,"water":0.5,"ice":0.5,"steel":0.5}
   }
 }

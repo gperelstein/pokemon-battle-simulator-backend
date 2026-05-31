@@ -20,14 +20,15 @@ import (
 type Engine struct {
 	Dex   dex.Dex
 	Rules gen.Rules
-	// Registro de efectos (moves/abilities/items custom). Si un id no está
-	// registrado se aplica comportamiento por defecto y se loggea.
-	// Effects effect.Registry
+	// Effects es el registro de efectos (moves/abilities/items). Un id no
+	// registrado cae al comportamiento por defecto (daño puro / no-op).
+	Effects *Registry
 }
 
-// New construye un Engine para una generación concreta.
+// New construye un Engine para una generación concreta, con el set de efectos
+// por defecto (ver defaultEffects).
 func New(d dex.Dex, rules gen.Rules) *Engine {
-	return &Engine{Dex: d, Rules: rules}
+	return &Engine{Dex: d, Rules: rules, Effects: defaultEffects()}
 }
 
 // Start inicializa el State a partir de los dos equipos ya cableados (ver
@@ -72,6 +73,12 @@ func (e *Engine) Start(state *State) ([]Event, error) {
 	var evs []Event
 	for side := range state.Sides {
 		evs = append(evs, Event{Kind: EventSwitchIn, Side: SideID(side), Slot: state.Sides[side].Active})
+	}
+	// Entry-abilities (Intimidate…) en orden de velocidad. No usan RNG, pero se
+	// pasa uno derivado del seed para mantener la firma uniforme.
+	r := rng.New(state.Seed)
+	for _, side := range e.residualOrder(state) {
+		evs = append(evs, e.abilityOnSwitchIn(state, side, r)...)
 	}
 	evs = append(evs, Event{Kind: EventTurnStarted, Amount: state.Turn})
 	return evs, nil
@@ -132,6 +139,10 @@ func (e *Engine) validateChoice(state *State, action Action) error {
 		if active.PP[action.Move.MoveSlot] <= 0 {
 			return ErrNoPP
 		}
+		// Choice lock: si el item bloqueó un slot, solo se puede repetir ese move.
+		if locked, ok := active.Volatiles["choicelock"].(int); ok && locked != action.Move.MoveSlot {
+			return ErrChoiceLocked
+		}
 	case ActionSwitch:
 		if action.Switch == nil {
 			return ErrInvalidSwitchSlot
@@ -190,9 +201,14 @@ func (e *Engine) orderMovers(state *State, movers []SideID, r rng.RNG) []SideID 
 		return movers
 	}
 	prio := func(side SideID) int {
-		act := state.PendingActions[side]
-		mv, _ := e.Dex.Move(e.Rules.Gen, e.active(state, side).Set.Moves[act.Move.MoveSlot])
-		return mv.Priority
+		bp := e.active(state, side)
+		mv, _ := e.Dex.Move(e.Rules.Gen, bp.Set.Moves[state.PendingActions[side].Move.MoveSlot])
+		p := mv.Priority
+		// Prankster y similares pueden modificar la prioridad.
+		if a, ok := e.abilityOf(bp).(abilityPriority); ok {
+			p = a.modifyPriority(bp, mv, p)
+		}
+		return p
 	}
 	ordered := append([]SideID(nil), movers...)
 	sort.SliceStable(ordered, func(i, j int) bool {
@@ -200,7 +216,7 @@ func (e *Engine) orderMovers(state *State, movers []SideID, r rng.RNG) []SideID 
 		if pa, pb := prio(a), prio(b); pa != pb {
 			return pa > pb
 		}
-		sa, sb := e.active(state, a).Stats.Spe, e.active(state, b).Stats.Spe
+		sa, sb := e.effectiveSpeed(e.active(state, a)), e.effectiveSpeed(e.active(state, b))
 		if sa != sb {
 			return sa > sb
 		}
@@ -223,7 +239,7 @@ func (e *Engine) process(state *State, r rng.RNG) []Event {
 		}
 		switch it.Kind {
 		case QueueSwitch:
-			evs = append(evs, e.executeSwitch(state, it.Side, it.Switch.TeamSlot, "")...)
+			evs = append(evs, e.executeSwitch(state, it.Side, it.Switch.TeamSlot, "", r)...)
 		case QueueMove:
 			evs = append(evs, e.executeMove(state, it.Side, it.MoveSlot, r)...)
 		case QueueRequestForcedSwitch:
@@ -248,15 +264,30 @@ func (e *Engine) executeMove(state *State, side SideID, slot int, r rng.RNG) []E
 	foe := side.opp()
 	defender := e.active(state, foe)
 	moveID := attacker.Set.Moves[slot]
+	foeSlot := state.Sides[foe].Active
+
+	// Status que impide actuar (sueño/congelado/parálisis). No consume PP ni
+	// emite "move usado"; sí puede emitir despertar/descongelar.
+	canMove, evs := e.beforeMoveStatus(state, side, r)
+	if !canMove {
+		return evs
+	}
 
 	attacker.PP[slot]--
 	attacker.LastMoveUsed = moveID
-	foeSlot := state.Sides[foe].Active
-	evs := []Event{{Kind: EventMoveUsed, Side: side, Slot: state.Sides[side].Active, MoveID: moveID}}
+	evs = append(evs, Event{Kind: EventMoveUsed, Side: side, Slot: state.Sides[side].Active, MoveID: moveID})
 
 	move, ok := e.Dex.Move(e.Rules.Gen, moveID)
 	if !ok {
 		return evs // move desconocido: no-op
+	}
+
+	// Choice lock: usar el move bloquea al portador a este slot (incluso si falla).
+	if _, locks := e.itemOf(attacker).(choiceLocker); locks {
+		if attacker.Volatiles == nil {
+			attacker.Volatiles = map[string]any{}
+		}
+		attacker.Volatiles["choicelock"] = slot
 	}
 
 	if !e.rollHit(move, attacker, defender, r) {
@@ -266,14 +297,26 @@ func (e *Engine) executeMove(state *State, side SideID, slot int, r rng.RNG) []E
 	isDamaging := move.Category != pokemon.CategoryStatus && move.Power > 0
 	if isDamaging {
 		eff := e.effectiveness(move, defender)
-		if eff == 0 {
-			// Inmune: el move falla por completo (sin daño ni switch forzado).
+		// Inmune por tipo o por ability (Levitate): el move falla por completo.
+		if eff == 0 || e.abilityImmune(defender, move.Type) {
 			return append(evs, Event{Kind: EventImmune, Side: foe, Slot: foeSlot, MoveID: moveID})
 		}
 		evs = append(evs, e.applyDamage(state, side, foe, move, eff, r)...)
 	}
-	// (Los moves de estado que no son switch siguen siendo no-op por ahora;
-	// sus efectos —status, boosts— llegan en pasos posteriores.)
+
+	// Efecto del move (status/boost/clima/volátil principal, o secundario tras el
+	// daño). Cada efecto resuelve su propia elegibilidad y saltea targets caídos.
+	if me := e.Effects.moves[moveID]; me != nil {
+		mc := &moveCtx{e: e, state: state, rng: r, userSide: side, targetSide: foe, move: move}
+		evs = append(evs, me.onHit(mc)...)
+	}
+
+	// Items que reaccionan tras un move ofensivo propio (Life Orb: retroceso).
+	if isDamaging {
+		if it, ok := e.itemOf(attacker).(afterMoveSelf); ok {
+			evs = append(evs, it.onAfterMoveSelf(&effCtx{e: e, state: state, rng: r}, side)...)
+		}
+	}
 
 	// Efectos de cambio forzado, después del daño:
 	if move.ForceSwitch {
@@ -287,6 +330,36 @@ func (e *Engine) executeMove(state *State, side SideID, slot int, r rng.RNG) []E
 	return evs
 }
 
+// beforeMoveStatus resuelve el status que puede impedir actuar al activo de side
+// (sueño, congelado, parálisis). Devuelve si puede moverse y los eventos
+// asociados. Solo consume RNG cuando hay un status que lo requiere, para no
+// perturbar la secuencia de turnos sin status.
+func (e *Engine) beforeMoveStatus(state *State, side SideID, r rng.RNG) (bool, []Event) {
+	bp := e.active(state, side)
+	slot := state.Sides[side].Active
+	switch bp.Status {
+	case StatusSleep:
+		bp.StatusData.SleepTurns--
+		if bp.StatusData.SleepTurns <= 0 {
+			bp.StatusData.SleepTurns = 0
+			bp.Status = StatusNone
+			return true, []Event{{Kind: EventStatusCured, Side: side, Slot: slot, Status: "slp"}}
+		}
+		return false, []Event{{Kind: EventStatusInflicted, Side: side, Slot: slot, Status: "slp", Reason: "asleep"}}
+	case StatusFreeze:
+		if r.IntN(100) < 20 { // 20% de descongelarse y poder actuar
+			bp.Status = StatusNone
+			return true, []Event{{Kind: EventStatusCured, Side: side, Slot: slot, Status: "frz"}}
+		}
+		return false, []Event{{Kind: EventStatusInflicted, Side: side, Slot: slot, Status: "frz", Reason: "frozen"}}
+	case StatusParalyze:
+		if r.IntN(100) < 25 { // 25% de parálisis total
+			return false, []Event{{Kind: EventStatusInflicted, Side: side, Slot: slot, Status: "par", Reason: "fullpara"}}
+		}
+	}
+	return true, nil
+}
+
 // applyDamage calcula y aplica el daño de un move que pega, y devuelve los
 // eventos (crit, efectividad, daño, faint). eff ya viene calculado (>0).
 func (e *Engine) applyDamage(state *State, side, foe SideID, move pokemon.Move, eff float64, r rng.RNG) []Event {
@@ -296,6 +369,12 @@ func (e *Engine) applyDamage(state *State, side, foe SideID, move pokemon.Move, 
 
 	crit := e.rollCrit(r)
 	dmg := e.calcDamage(attacker, defender, move, crit, eff, r)
+
+	// Sturdy / Focus Sash: sobrevivir con 1 HP a un golpe letal desde HP máximo.
+	var guardEvs []Event
+	if dmg >= defender.HP {
+		dmg, guardEvs = e.applyLethalGuard(state, foe, dmg)
+	}
 	if dmg > defender.HP {
 		dmg = defender.HP
 	}
@@ -312,6 +391,7 @@ func (e *Engine) applyDamage(state *State, side, foe SideID, move pokemon.Move, 
 		evs = append(evs, Event{Kind: EventNotVeryEffective, Side: foe, Slot: foeSlot})
 	}
 	evs = append(evs, Event{Kind: EventDamage, Side: foe, Slot: foeSlot, MoveID: move.ID, Amount: dmg})
+	evs = append(evs, guardEvs...) // activación de Sturdy/Focus Sash, tras el daño
 
 	if defender.HP <= 0 {
 		defender.HP = 0
@@ -325,15 +405,22 @@ func (e *Engine) applyDamage(state *State, side, foe SideID, move pokemon.Move, 
 // que entra (mecánica estándar). Emite switch-out solo si el saliente no está
 // debilitado (en un forced switch por faint no hay salida que animar). reason
 // queda en los eventos ("" voluntario/replacement, "drag" para Roar/Dragon Tail).
-func (e *Engine) executeSwitch(state *State, side SideID, slot int, reason string) []Event {
+func (e *Engine) executeSwitch(state *State, side SideID, slot int, reason string, r rng.RNG) []Event {
 	s := &state.Sides[side]
 	var evs []Event
 	if !s.Team[s.Active].Fainted {
 		evs = append(evs, Event{Kind: EventSwitchOut, Side: side, Slot: s.Active, Reason: reason})
 	}
+	// El que sale pierde el bloqueo de Choice (se re-evalúa si vuelve a entrar).
+	delete(s.Team[s.Active].Volatiles, "choicelock")
 	s.Active = slot
 	s.Team[slot].Boosts = Boosts{}
-	return append(evs, Event{Kind: EventSwitchIn, Side: side, Slot: slot, Reason: reason})
+	if s.Team[slot].Volatiles == nil {
+		s.Team[slot].Volatiles = map[string]any{}
+	}
+	evs = append(evs, Event{Kind: EventSwitchIn, Side: side, Slot: slot, Reason: reason})
+	// Entry-ability del que entra (Intimidate…).
+	return append(evs, e.abilityOnSwitchIn(state, side, r)...)
 }
 
 // dragOut saca al activo de side a un Pokémon vivo del banco elegido al azar
@@ -354,7 +441,7 @@ func (e *Engine) dragOut(state *State, side SideID, r rng.RNG) []Event {
 		return nil
 	}
 	pick := choices[r.IntN(len(choices))]
-	return e.executeSwitch(state, side, pick, "drag")
+	return e.executeSwitch(state, side, pick, "drag", r)
 }
 
 // advance se llama cuando la cola se vació. Resuelve la secuencia de fin de
@@ -418,7 +505,7 @@ func (e *Engine) applyForcedSwitch(state *State, action Action) ([]Event, error)
 		return nil, err
 	}
 
-	evs := e.executeSwitch(state, side, action.Switch.TeamSlot, "")
+	evs := e.executeSwitch(state, side, action.Switch.TeamSlot, "", rng.New(turnSeed(state)))
 	state.PendingSwitches = remove(state.PendingSwitches, side)
 
 	if len(state.PendingSwitches) > 0 {
@@ -522,4 +609,5 @@ var (
 	ErrNoPP              = errors.New("battle: move has no PP left")
 	ErrInvalidSwitchSlot = errors.New("battle: invalid switch target")
 	ErrTrapped           = errors.New("battle: active pokemon is trapped")
+	ErrChoiceLocked      = errors.New("battle: locked into a move by a Choice item")
 )

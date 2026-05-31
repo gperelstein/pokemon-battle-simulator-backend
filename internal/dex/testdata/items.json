@@ -1,6 +1,10 @@
 {
   "9": {
     "leftovers": {"id":"leftovers","name":"Leftovers"},
-    "choicescarf": {"id":"choicescarf","name":"Choice Scarf"}
+    "choicescarf": {"id":"choicescarf","name":"Choice Scarf"},
+    "choiceband": {"id":"choiceband","name":"Choice Band"},
+    "choicespecs": {"id":"choicespecs","name":"Choice Specs"},
+    "lifeorb": {"id":"lifeorb","name":"Life Orb"},
+    "focussash": {"id":"focussash","name":"Focus Sash"}
   }
 }

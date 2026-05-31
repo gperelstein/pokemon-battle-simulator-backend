@@ -22,7 +22,7 @@ type Rules struct {
 	HasDynamax       bool // Gen 8
 	HasTera          bool // Gen 9
 
-	// Fórmulas inyectables (firmas a definir en battle/effect).
+	// Fórmulas inyectables (firmas a definir en internal/battle).
 	// Se dejan como interface{} aquí para no atar acoplamiento circular;
 	// los tipos concretos se definen en battle/.
 	DamageFormula any

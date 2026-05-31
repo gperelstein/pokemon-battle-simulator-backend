@@ -12,6 +12,16 @@
     "uturn": {"id":"uturn","name":"U-turn","type":"bug","category":"physical","power":70,"accuracy":100,"pp":20,"priority":0,"target":"normal","selfSwitch":"true","flags":{"contact":true,"protect":true,"mirror":true}},
     "voltswitch": {"id":"voltswitch","name":"Volt Switch","type":"electric","category":"special","power":70,"accuracy":100,"pp":20,"priority":0,"target":"normal","selfSwitch":"true","flags":{"protect":true,"mirror":true}},
     "roar": {"id":"roar","name":"Roar","type":"normal","category":"status","power":0,"accuracy":0,"pp":20,"priority":-6,"target":"normal","forceSwitch":true,"flags":{"reflectable":true,"mirror":true,"sound":true}},
-    "dragontail": {"id":"dragontail","name":"Dragon Tail","type":"dragon","category":"physical","power":60,"accuracy":90,"pp":10,"priority":-6,"target":"normal","forceSwitch":true,"flags":{"contact":true,"protect":true,"mirror":true}}
+    "dragontail": {"id":"dragontail","name":"Dragon Tail","type":"dragon","category":"physical","power":60,"accuracy":90,"pp":10,"priority":-6,"target":"normal","forceSwitch":true,"flags":{"contact":true,"protect":true,"mirror":true}},
+    "willowisp": {"id":"willowisp","name":"Will-O-Wisp","type":"fire","category":"status","power":0,"accuracy":85,"pp":15,"priority":0,"target":"normal","flags":{"protect":true,"mirror":true,"reflectable":true}},
+    "thunderwave": {"id":"thunderwave","name":"Thunder Wave","type":"electric","category":"status","power":0,"accuracy":90,"pp":20,"priority":0,"target":"normal","flags":{"protect":true,"mirror":true,"reflectable":true}},
+    "toxic": {"id":"toxic","name":"Toxic","type":"poison","category":"status","power":0,"accuracy":90,"pp":10,"priority":0,"target":"normal","flags":{"protect":true,"mirror":true,"reflectable":true}},
+    "swordsdance": {"id":"swordsdance","name":"Swords Dance","type":"normal","category":"status","power":0,"accuracy":0,"pp":20,"priority":0,"target":"self","flags":{"snatch":true}},
+    "calmmind": {"id":"calmmind","name":"Calm Mind","type":"psychic","category":"status","power":0,"accuracy":0,"pp":20,"priority":0,"target":"self","flags":{"snatch":true}},
+    "sunnyday": {"id":"sunnyday","name":"Sunny Day","type":"fire","category":"status","power":0,"accuracy":0,"pp":5,"priority":0,"target":"all","flags":{}},
+    "sandstorm": {"id":"sandstorm","name":"Sandstorm","type":"rock","category":"status","power":0,"accuracy":0,"pp":10,"priority":0,"target":"all","flags":{}},
+    "leechseed": {"id":"leechseed","name":"Leech Seed","type":"grass","category":"status","power":0,"accuracy":90,"pp":10,"priority":0,"target":"normal","flags":{"protect":true,"mirror":true,"reflectable":true}},
+    "icebeam": {"id":"icebeam","name":"Ice Beam","type":"ice","category":"special","power":90,"accuracy":100,"pp":10,"priority":0,"target":"normal","flags":{"protect":true,"mirror":true}},
+    "energyball": {"id":"energyball","name":"Energy Ball","type":"grass","category":"special","power":90,"accuracy":100,"pp":10,"priority":0,"target":"normal","flags":{"protect":true,"mirror":true}}
   }
 }

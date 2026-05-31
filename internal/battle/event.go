@@ -11,7 +11,7 @@ type Event struct {
 	Kind EventKind
 
 	Side   SideID
-	Slot   int    // índice en el equipo, cuando aplica
+	Slot   int // índice en el equipo, cuando aplica
 	MoveID string
 	Amount int    // daño, curación, etc.
 	Stat   string // "atk", "spe", etc. para boosts
@@ -44,4 +44,7 @@ const (
 	EventBattleEnded
 	EventTurnStarted
 	EventRequestForcedSwitch
+	// Agregados en el paso 8 (aditivos: los valores 0..20 no se mueven).
+	EventAbilityActivated // una ability se activó (Intimidate, Sturdy, Speed Boost…)
+	EventItemConsumed     // un item se gastó (Focus Sash…)
 )

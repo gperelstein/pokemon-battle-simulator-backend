@@ -3,6 +3,19 @@
     "blaze": {"id":"blaze","name":"Blaze"},
     "solarpower": {"id":"solarpower","name":"Solar Power"},
     "static": {"id":"static","name":"Static"},
-    "lightningrod": {"id":"lightningrod","name":"Lightning Rod"}
+    "lightningrod": {"id":"lightningrod","name":"Lightning Rod"},
+    "rockhead": {"id":"rockhead","name":"Rock Head"},
+    "sturdy": {"id":"sturdy","name":"Sturdy"},
+    "sandveil": {"id":"sandveil","name":"Sand Veil"},
+    "overgrow": {"id":"overgrow","name":"Overgrow"},
+    "chlorophyll": {"id":"chlorophyll","name":"Chlorophyll"},
+    "levitate": {"id":"levitate","name":"Levitate"},
+    "heatproof": {"id":"heatproof","name":"Heatproof"},
+    "intimidate": {"id":"intimidate","name":"Intimidate"},
+    "moxie": {"id":"moxie","name":"Moxie"},
+    "speedboost": {"id":"speedboost","name":"Speed Boost"},
+    "keeneye": {"id":"keeneye","name":"Keen Eye"},
+    "stall": {"id":"stall","name":"Stall"},
+    "prankster": {"id":"prankster","name":"Prankster"}
   }
 }

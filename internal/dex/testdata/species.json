@@ -5,6 +5,11 @@
   "9": {
     "charizard": {"id":"charizard","name":"Charizard","types":["fire","flying"],"baseStats":{"hp":78,"atk":84,"def":78,"spa":109,"spd":85,"spe":100},"abilities":["blaze","solarpower"]},
     "pikachu": {"id":"pikachu","name":"Pikachu","types":["electric"],"baseStats":{"hp":35,"atk":55,"def":40,"spa":50,"spd":50,"spe":90},"abilities":["static","lightningrod"]},
-    "golem": {"id":"golem","name":"Golem","types":["rock","ground"],"baseStats":{"hp":80,"atk":120,"def":130,"spa":55,"spd":65,"spe":45},"abilities":["rockhead","sturdy"]}
+    "golem": {"id":"golem","name":"Golem","types":["rock","ground"],"baseStats":{"hp":80,"atk":120,"def":130,"spa":55,"spd":65,"spe":45},"abilities":["rockhead","sturdy","sandveil"]},
+    "venusaur": {"id":"venusaur","name":"Venusaur","types":["grass","poison"],"baseStats":{"hp":80,"atk":82,"def":83,"spa":100,"spd":100,"spe":80},"abilities":["overgrow","chlorophyll"]},
+    "bronzong": {"id":"bronzong","name":"Bronzong","types":["steel","psychic"],"baseStats":{"hp":67,"atk":89,"def":116,"spa":79,"spd":116,"spe":33},"abilities":["levitate","heatproof"]},
+    "gyarados": {"id":"gyarados","name":"Gyarados","types":["water","flying"],"baseStats":{"hp":95,"atk":125,"def":79,"spa":60,"spd":100,"spe":81},"abilities":["intimidate","moxie"]},
+    "blaziken": {"id":"blaziken","name":"Blaziken","types":["fire","fighting"],"baseStats":{"hp":80,"atk":120,"def":70,"spa":110,"spd":70,"spe":80},"abilities":["blaze","speedboost"]},
+    "sableye": {"id":"sableye","name":"Sableye","types":["dark","ghost"],"baseStats":{"hp":50,"atk":75,"def":75,"spa":65,"spd":65,"spe":50},"abilities":["keeneye","stall","prankster"]}
   }
 }

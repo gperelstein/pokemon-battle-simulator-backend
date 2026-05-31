@@ -32,6 +32,13 @@ func (e *Engine) calcDamage(attacker, defender *BattlePokemon, move pokemon.Move
 			defStage = 0
 		}
 	}
+	// Modificadores de item a la stat ofensiva (Choice Band → atk, Specs → spa).
+	statKey := pokemon.StatAtk
+	if cat == pokemon.CategorySpecial {
+		statKey = pokemon.StatSpA
+	}
+	atkStat = e.modifyStatValue(attacker, statKey, atkStat)
+
 	a := applyBoost(atkStat, atkStage)
 	d := applyBoost(defStat, defStage)
 	if d < 1 {
@@ -51,6 +58,13 @@ func (e *Engine) calcDamage(attacker, defender *BattlePokemon, move pokemon.Move
 		dmg = dmg * 3 / 2
 	}
 	dmg = int(float64(dmg) * eff)
+
+	// Burn: -50% al daño físico (Guts y otras excepciones quedan fuera de scope).
+	if cat == pokemon.CategoryPhysical && attacker.Status == StatusBurn {
+		dmg /= 2
+	}
+	// Modificadores de daño de item (Life Orb ×1.3).
+	dmg = e.modifyDamageValue(attacker, move, dmg)
 
 	if eff > 0 && dmg < 1 {
 		dmg = 1 // un golpe efectivo siempre hace al menos 1

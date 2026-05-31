@@ -23,8 +23,9 @@ type Move struct {
 	PP       int    // máximo
 	Priority int    // típicamente -7..+5
 	Target   string // "normal", "self", "allAdjacentFoes", etc.
-	// EffectID referencia el efecto registrado en battle/effect. Un move sin
-	// efecto registrado se trata como daño puro (o no-op si es status).
+	// EffectID: heredado del diseño original. El sistema de efectos (paso 8)
+	// keyea por el id del propio move (convención Showdown), así que este campo
+	// quedó sin uso; se mantiene por compatibilidad y es candidato a borrarse.
 	EffectID string
 	// SelfSwitch != "" hace que el atacante cambie tras usar el move (U-turn,
 	// Volt Switch, Teleport…). Valores: "true", "copyvolatile" (Baton Pass,
@@ -37,7 +38,8 @@ type Move struct {
 	Flags map[string]bool
 }
 
-// Ability e Item se identifican por id; sus efectos viven en battle/effect.
+// Ability e Item se identifican por id; sus efectos viven en internal/battle
+// (effects*.go), registrados por ese mismo id.
 type Ability struct {
 	ID, Name string
 }
